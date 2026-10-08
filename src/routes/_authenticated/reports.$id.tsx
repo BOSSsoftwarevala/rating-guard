@@ -1,7 +1,7 @@
 import { ScanTimeline } from "@/components/ops-panels";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useLocalFn } from "@/lib/mock-server";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { z } from "zod";
 import { ArrowLeft, Download, Flag } from "lucide-react";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
 function ReportDetail() {
   const { id } = Route.useParams();
   const { print } = Route.useSearch();
-  const audit = useLocalFn(logAudit);
+  const audit = useServerFn(logAudit);
   const { data, isLoading } = useQuery(scanQuery(id));
 
   function download() {

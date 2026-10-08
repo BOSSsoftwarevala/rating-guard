@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocalFn } from "@/lib/mock-server";
+import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Loader2 } from "lucide-react";
 import { listCompletedBatches, generateBatchInsights, type BatchInsights } from "@/lib/batch-insights.functions";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,8 @@ const pCls: Record<string, string> = {
 };
 
 export function BatchInsightsPanel() {
-  const listFn = useLocalFn(listCompletedBatches);
-  const genFn = useLocalFn(generateBatchInsights);
+  const listFn = useServerFn(listCompletedBatches);
+  const genFn = useServerFn(generateBatchInsights);
   const { data: batches = [], isLoading } = useQuery({ queryKey: ["completed-batches"], queryFn: () => listFn() });
   const [batchId, setBatchId] = useState<string>("");
   const [busy, setBusy] = useState(false);

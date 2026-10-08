@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useLocalFn } from "@/lib/mock-server";
+import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { Upload, Loader2, RotateCcw } from "lucide-react";
 import { scanFetch, scanAnalyze, createBatch } from "@/lib/scan.functions";
@@ -40,9 +40,9 @@ function parseInput(text: string): Checked {
 }
 
 export function BulkScan({ disabled }: { disabled: boolean }) {
-  const fetchStage = useLocalFn(scanFetch);
-  const analyzeStage = useLocalFn(scanAnalyze);
-  const newBatch = useLocalFn(createBatch);
+  const fetchStage = useServerFn(scanFetch);
+  const analyzeStage = useServerFn(scanAnalyze);
+  const newBatch = useServerFn(createBatch);
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState("");

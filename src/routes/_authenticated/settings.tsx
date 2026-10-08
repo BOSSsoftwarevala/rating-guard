@@ -2,7 +2,7 @@ import { SystemQuality, ErrorCenter } from "@/components/ops-panels";
 import { HomepageEditor } from "@/components/homepage-editor";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocalFn } from "@/lib/mock-server";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { RefreshCw, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
@@ -41,9 +41,9 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
 
 function SettingsPage() {
   const { user } = Route.useRouteContext();
-  const status = useLocalFn(getSystemStatus);
-  const auditFn = useLocalFn(getAuditLog);
-  const log = useLocalFn(logAudit);
+  const status = useServerFn(getSystemStatus);
+  const auditFn = useServerFn(getAuditLog);
+  const log = useServerFn(logAudit);
   const sysQ = useQuery({ queryKey: ["system-status"], queryFn: () => status() });
   const auditQ = useQuery({ queryKey: ["audit"], queryFn: () => auditFn() });
   const sys = sysQ.data;

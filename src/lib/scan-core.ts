@@ -27,7 +27,7 @@ function nameFromUrl(url: string) {
   try { return decodeURIComponent(m[1]!.replace(/\+/g, " ")).trim() || null; } catch { return null; }
 }
 
-export async function scanFetchCore(supabase: any, userId: string, data: { url: string; batchId?: string }): Promise<StageResponse> {
+export async function scanFetchCore(supabase: any, userId: string, data: { url: string; batchId?: string | undefined }): Promise<StageResponse> {
   if (!validGoogleUrl(data.url)) return { ok: false, code: "INVALID_URL", message: "This isn't a Google Maps or Business link. Paste a link like google.com/maps/place/… or maps.app.goo.gl/…" };
   const t0 = Date.now();
   const { data: scan } = await supabase.from("scans").insert({

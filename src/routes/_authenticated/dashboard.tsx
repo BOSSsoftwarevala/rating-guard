@@ -39,7 +39,7 @@ function Dashboard() {
 
   return (
     <>
-      <PageHeader title="Google The Rating Guard" subtitle="Scan, analyze and report potentially policy-risk Google reviews."
+      <PageHeader title="Review Command Center" subtitle="Scan, analyze and report potentially policy-risk Google reviews."
         action={<Button asChild size="lg"><Link to="/scan"><Plus /> New Scan</Link></Button>} />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((k, i) => (

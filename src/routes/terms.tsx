@@ -3,10 +3,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
-      { title: "Terms of Service — Google The Rating Guard" },
-      { name: "description", content: "The terms that govern use of the Google The Rating Guard." },
-      { property: "og:title", content: "Terms of Service — Google The Rating Guard" },
-      { property: "og:description", content: "The terms that govern use of the Google The Rating Guard." },
+      { title: "Terms of Service — Review Command Center" },
+      { name: "description", content: "The terms that govern use of the Review Command Center." },
+      { property: "og:title", content: "Terms of Service — Review Command Center" },
+      { property: "og:description", content: "The terms that govern use of the Review Command Center." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -18,7 +18,7 @@ const sections: { h: string; body: string[] }[] = [
   {
     h: "1. The Service",
     body: [
-      "Google The Rating Guard (“the Service”), operated by Removal Work Solution, helps you retrieve publicly available Google review data, analyse it for policy-relevant risk, and prepare reports and reply drafts.",
+      "Review Command Center (“the Service”), operated by Removal Work Solution, helps you retrieve publicly available Google review data, analyse it for policy-relevant risk, and prepare reports and reply drafts.",
       "The Service is independent and is not affiliated with, endorsed by, or sponsored by Google. “Google” and related marks belong to Google LLC.",
     ],
   },

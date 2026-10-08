@@ -1,8 +1,23 @@
 // Shared scan pipeline used by app server functions and the /api REST routes.
 // Every stage transition is recorded in scan_events; failures are recorded in error_events.
-import { ScanError, resolveAndFetchPlace } from "./google-places.server";
+import { ScanError, resolveAndFetchPlace, type PlaceResult } from "./google-places.server";
 import { analyzeReviews, enforceEvidence, verifyFlags, reviewHash, ANALYSIS_MODEL, AI_PROVIDER, PROMPT_VERSION, type ReviewAnalysis } from "./analysis.server";
 import { APP_VERSION } from "./version";
+
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+export function cacheKey(url: string) {
+  try { const u = new URL(url.trim()); u.hash = ""; return (u.origin + u.pathname.replace(/\/+$/, "") + u.search).toLowerCase(); } catch { return url.trim().toLowerCase(); }
+}
+/** 24h cache of Google place results keyed by the normalized link, so repeated links cost no Google requests. */
+async function cachedPlace(url: string, load: () => Promise<PlaceResult>): Promise<PlaceResult> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const key = cacheKey(url);
+  const { data: hit } = await supabaseAdmin.from("place_cache").select("payload, fetched_at").eq("place_key", key).maybeSingle();
+  if (hit && Date.now() - new Date(hit.fetched_at).getTime() < CACHE_TTL_MS) return hit.payload as unknown as PlaceResult;
+  const place = await load();
+  await supabaseAdmin.from("place_cache").upsert({ place_key: key, payload: place as any, fetched_at: new Date().toISOString() });
+  return place;
+}
 
 export type StageResponse = { ok: true; scanId: string; reviews: number } | { ok: false; code: string; message: string; scanId?: string };
 
@@ -75,7 +90,7 @@ function healthScore(rating: number | null, reviews: { rating: number }[], analy
 /** Stage 1: resolve business, read public place data, retrieve available reviews. */
 export async function scanFetchCore(supabase: any, userId: string, data: { url: string; batchId?: string | undefined }): Promise<StageResponse> {
   if (!validGoogleUrl(data.url)) return { ok: false, code: "INVALID_URL", message: "This isn't a Google Maps or Business link. Paste a link like google.com/maps/place/… or maps.app.goo.gl/…" };
-  const googleKey = process.env["GOOGLE_MAPS_API_KEY"] || process.env["GOOGLE_PLACES_API_KEY"] || process.env["GOOGLE_API_KEY"];
+  const googleKey = process.env["GOOGLE_PLACES_API_KEY"];
   if (!googleKey) return { ok: false, code: "GOOGLE_API_NOT_CONFIGURED", message: "Google Places API is not configured. Add the API key in Settings." };
 
   await sweepStale(supabase, userId);
@@ -96,11 +111,11 @@ export async function scanFetchCore(supabase: any, userId: string, data: { url: 
   try {
     let t = Date.now();
     await track(supabase, userId, scan.id, "PROCESSING", t);
-    const place = await resolveAndFetchPlace(googleKey, data.url, async (cid) => {
+    const place = await cachedPlace(data.url, () => resolveAndFetchPlace(googleKey, data.url, async (cid) => {
       const { data: hit } = await supabase.from("businesses").select("place_id").eq("user_id", userId)
         .or(`maps_uri.ilike.%cid=${cid}&%,maps_uri.ilike.%cid=${cid}`).not("place_id", "is", null).limit(1);
       return hit?.[0]?.place_id ?? null;
-    });
+    }));
     await track(supabase, userId, scan.id, "BUSINESS_RESOLVED", t, place.name);
     const biz = await supabase.from("businesses").upsert({
       user_id: userId, place_id: place.placeId, name: place.name, category: place.category, address: place.address,
@@ -139,12 +154,12 @@ export async function scanFetchCore(supabase: any, userId: string, data: { url: 
 
 /** Stage 2: analyze review signals (with cache + second-model verification), classify risk, prepare report. */
 export async function scanAnalyzeCore(supabase: any, userId: string, data: { scanId: string }): Promise<StageResponse> {
-  const aiKey = process.env["LOVABLE_API_KEY"];
+  const aiKey = process.env["OPENAI_API_KEY"];
   const t0 = Date.now();
   const { data: scan } = await supabase.from("scans").select("*").eq("id", data.scanId).eq("user_id", userId).maybeSingle();
   if (!scan) return { ok: false, code: "NOT_FOUND", message: "Scan not found." };
   if (scan.status === "complete") return { ok: true, scanId: scan.id, reviews: scan.reviews_retrieved };
-  if (!aiKey) return fail(supabase, userId, scan.id, new ScanError("AI_UNAVAILABLE", "AI analysis is unavailable — AI service is not configured."), t0);
+  if (!aiKey) return fail(supabase, userId, scan.id, new ScanError("AI_UNAVAILABLE", "AI analysis is unavailable — OPENAI_API_KEY is not configured."), t0);
   try {
     const { data: reviews, error } = await supabase.from("reviews").select("*").eq("scan_id", scan.id).order("created_at");
     if (error) throw new ScanError("DB_UNAVAILABLE", "Database unavailable.");

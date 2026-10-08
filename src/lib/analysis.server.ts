@@ -12,8 +12,8 @@ export type ReviewAnalysis = {
   confidence: number;
 };
 
-export const ANALYSIS_MODEL = "google/gemini-3-flash-preview";
-export const AI_PROVIDER = "Lovable AI Gateway";
+export const ANALYSIS_MODEL = "gpt-4.1-mini";
+export const AI_PROVIDER = "OpenAI";
 
 const SYSTEM = `You assess the policy risk of Google reviews against Google's prohibited & restricted content policy.
 Signals to consider: potential spam, irrelevant/off-topic content, abusive language, potentially deceptive content,
@@ -29,7 +29,7 @@ export async function analyzeReviews(apiKey: string, businessName: string, categ
   if (reviews.length === 0) return [];
   let res: Response;
   try {
-    res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -72,9 +72,14 @@ export async function analyzeReviews(apiKey: string, businessName: string, categ
   } catch {
     throw new ScanError("AI_UNAVAILABLE", "AI analysis is unavailable (network error). Try again.");
   }
-  if (res.status === 429) throw new ScanError("RATE_LIMIT", "AI analysis is rate limited. Try again in a minute.");
-  if (res.status === 402) throw new ScanError("AI_UNAVAILABLE", "AI analysis credits are exhausted. Add credits in workspace settings.");
-  if (!res.ok) throw new ScanError("AI_UNAVAILABLE", `AI analysis is unavailable [${res.status}].`);
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`OpenAI request failed [${res.status}]: ${body.slice(0, 500)}`);
+    if (res.status === 429 && body.includes("insufficient_quota")) throw new ScanError("AI_QUOTA", "OpenAI quota or billing limit reached. Add credit to your OpenAI account, then resume the queue.");
+    if (res.status === 429) throw new ScanError("RATE_LIMIT", "OpenAI rate limit reached. Retrying shortly.");
+    if (res.status === 401 || res.status === 403) throw new ScanError("AI_AUTH", "OpenAI rejected the API key. Update OPENAI_API_KEY in project secrets.");
+    throw new ScanError("AI_UNAVAILABLE", `AI analysis is unavailable [${res.status}].`);
+  }
   const json = await res.json();
   const args = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   let results: any[] = [];
@@ -95,7 +100,7 @@ export async function analyzeReviews(apiKey: string, businessName: string, categ
 }
 
 export const PROMPT_VERSION = "risk-v2";
-export const VERIFY_MODEL = "openai/gpt-5-mini";
+export const VERIFY_MODEL = "gpt-4o-mini";
 
 /** Explainable guard: a flag must be backed by a quote or signal; a low star rating alone is never a violation. */
 export function enforceEvidence(a: ReviewAnalysis): ReviewAnalysis {
@@ -112,7 +117,7 @@ export async function verifyFlags(apiKey: string, items: { text: string; rating:
   if (!items.length) return [];
   const now = new Date().toISOString();
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({

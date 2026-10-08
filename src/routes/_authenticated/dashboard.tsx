@@ -6,6 +6,10 @@ import { scansQuery, scanRisk, fmtDate, riskyCount } from "@/lib/data";
 import { PageHeader, EmptyState, StatusPill } from "@/components/app-shell";
 import { Stars, RiskBadge, DevTag, ratingTone } from "@/components/review-ui";
 import { Button } from "@/components/ui/button";
+import shield from "@/assets/icon-shield.png";
+import scanIcon from "@/assets/icon-scan.png";
+import reportIcon from "@/assets/icon-report.png";
+import alertIcon from "@/assets/icon-alert.png";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — The Rating Guard" }, { name: "description", content: "Overview of Google review scans and risk." }] }),
@@ -19,10 +23,10 @@ function Dashboard() {
   const high = sum("high_count"), med = sum("medium_count"), norm = sum("normal_count"), req = sum("requires_review_count");
   const total = high + med + norm + req;
   const kpis = [
-    { label: "Total Scans", value: scans.length },
-    { label: "Businesses Scanned", value: new Set(done.map((s) => s.business_id ?? s.business_name)).size },
-    { label: "Reviews Analyzed", value: total },
-    { label: "Potentially Risky Reviews", value: high + med, accent: true },
+    { label: "Total Scans", value: scans.length, img: scanIcon },
+    { label: "Businesses Scanned", value: new Set(done.map((s) => s.business_id ?? s.business_name)).size, img: shield },
+    { label: "Reviews Analyzed", value: total, img: reportIcon },
+    { label: "Potentially Risky Reviews", value: high + med, accent: true, img: alertIcon },
   ];
   const rated = done.filter((s) => s.rating != null);
   const buckets = [
@@ -39,7 +43,8 @@ function Dashboard() {
         action={<Button asChild size="lg"><Link to="/scan"><Plus /> New Scan</Link></Button>} />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((k, i) => (
-          <div key={k.label} className="surface surface-hover animate-rise p-5" style={{ animationDelay: `${i * 60}ms` }}>
+          <div key={k.label} className="surface surface-hover group animate-rise relative overflow-hidden p-5" style={{ animationDelay: `${i * 60}ms` }}>
+            <img src={k.img} alt="" width={80} height={80} loading="lazy" className="icon-3d absolute -right-3 -top-3 w-20 opacity-90 group-hover:-translate-y-1 group-hover:rotate-6" />
             <div className="text-sm text-muted-foreground">{k.label}</div>
             <div className={`mt-2 font-mono text-3xl font-semibold tabular ${k.accent ? "text-risk-high" : ""}`}>{isLoading ? "—" : k.value.toLocaleString()}</div>
           </div>

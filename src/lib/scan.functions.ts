@@ -1,4 +1,4 @@
-import { createServerFn } from "@/lib/mock-server";
+import { localFn } from "@/lib/mock-server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/lib/mock-server";
 import { ANALYSIS_MODEL, AI_PROVIDER } from "./analysis";
@@ -10,7 +10,7 @@ export type { StageResponse };
 
 type Health = "healthy" | "warning" | "unavailable";
 
-export const getSystemStatus = createServerFn({ method: "GET" })
+export const getSystemStatus = localFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const t0 = Date.now();
@@ -39,18 +39,18 @@ export const getSystemStatus = createServerFn({ method: "GET" })
 
 
 /** Stage 1: resolve business, read public place data, retrieve available reviews. */
-export const scanFetch = createServerFn({ method: "POST" })
+export const scanFetch = localFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ url: z.string().trim().min(5).max(2000), batchId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data, context }): Promise<StageResponse> => scanFetchCore(context.supabase, context.userId, data));
 
 /** Stage 2: analyze review signals, classify risk, prepare report. */
-export const scanAnalyze = createServerFn({ method: "POST" })
+export const scanAnalyze = localFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ scanId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<StageResponse> => scanAnalyzeCore(context.supabase, context.userId, data));
 
-export const logAudit = createServerFn({ method: "POST" })
+export const logAudit = localFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ action: z.enum(["report.downloaded", "settings.password_changed", "settings.profile_updated", "auth.logout_all"]), detail: z.record(z.string(), z.string()).optional() }).parse(d))
   .handler(async ({ data, context }) => {
@@ -58,14 +58,14 @@ export const logAudit = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const getAuditLog = createServerFn({ method: "GET" })
+export const getAuditLog = localFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await context.supabase.from("audit_log").select("action, created_at").order("created_at", { ascending: false }).limit(8);
     return data ?? [];
   });
 
-export const createBatch = createServerFn({ method: "POST" })
+export const createBatch = localFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ total: z.number().int().min(1).max(500) }).parse(d))
   .handler(async ({ data, context }) => {

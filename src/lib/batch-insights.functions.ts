@@ -1,4 +1,4 @@
-import { createServerFn } from "@/lib/mock-server";
+import { localFn } from "@/lib/mock-server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/lib/mock-server";
 
@@ -13,7 +13,7 @@ export type BatchInsights = {
 };
 
 /** Completed batches (with at least one completed scan) for the picker. */
-export const listCompletedBatches = createServerFn({ method: "GET" })
+export const listCompletedBatches = localFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await context.supabase
@@ -57,7 +57,7 @@ async function readResponsesStream(res: Response): Promise<string> {
   return text;
 }
 
-export const generateBatchInsights = createServerFn({ method: "POST" })
+export const generateBatchInsights = localFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ batchId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true; insights: BatchInsights } | { ok: false; message: string }> => {

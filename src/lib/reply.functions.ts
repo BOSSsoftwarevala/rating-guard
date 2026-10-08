@@ -1,4 +1,4 @@
-import { createServerFn } from "@/lib/mock-server";
+import { localFn } from "@/lib/mock-server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/lib/mock-server";
 
@@ -34,7 +34,7 @@ async function readStream(res: Response): Promise<string> {
 }
 
 /** Vala AI — review intelligence assistant: summary, risk explanation and an editable reply draft. */
-export const suggestReply = createServerFn({ method: "POST" })
+export const suggestReply = localFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ reviewId: z.string().uuid(), tone: z.enum(REPLY_TONES) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true; suggestion: ReplySuggestion } | { ok: false; message: string }> => {

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@/lib/mock-server";
+import { useLocalFn } from "@/lib/mock-server";
 import { Check, Loader2, Search, KeyRound, AlertTriangle, X } from "lucide-react";
 import { scanFetch, scanAnalyze, getSystemStatus } from "@/lib/scan.functions";
 import { scanQuery } from "@/lib/data";
@@ -26,9 +26,9 @@ function looksLikeGoogleUrl(v: string) {
 }
 
 function ScanPage() {
-  const status = useServerFn(getSystemStatus);
-  const fetchStage = useServerFn(scanFetch);
-  const analyzeStage = useServerFn(scanAnalyze);
+  const status = useLocalFn(getSystemStatus);
+  const fetchStage = useLocalFn(scanFetch);
+  const analyzeStage = useLocalFn(scanAnalyze);
   const qc = useQueryClient();
   const { data: sys } = useQuery({ queryKey: ["system-status"], queryFn: () => status() });
   const [mode, setMode] = useState<"single" | "bulk">("single");

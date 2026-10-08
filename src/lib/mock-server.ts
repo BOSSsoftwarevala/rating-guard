@@ -27,5 +27,5 @@ class Builder<I = undefined> {
   }
 }
 
-export const createServerFn = (_o?: { method?: string }) => new Builder();
-export const useServerFn = <F>(f: F) => f;
+export const localFn = (_o?: { method?: string }) => new Builder();
+export const useLocalFn = <F>(f: F) => f;

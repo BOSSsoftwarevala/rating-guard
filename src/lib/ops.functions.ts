@@ -1,12 +1,12 @@
 // Tracking, Action Center, Quality Center, Error Center and System Quality reads/writes.
-import { createServerFn } from "@/lib/mock-server";
+import { localFn } from "@/lib/mock-server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/lib/mock-server";
 import { ACTION_STATUSES } from "./actions";
 
 const day = (iso: string) => iso.slice(0, 10);
 
-export const getOperations = createServerFn({ method: "GET" })
+export const getOperations = localFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
@@ -41,7 +41,7 @@ export const getOperations = createServerFn({ method: "GET" })
     };
   });
 
-export const getScanEvents = createServerFn({ method: "GET" })
+export const getScanEvents = localFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ scanId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
@@ -49,7 +49,7 @@ export const getScanEvents = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
-export const getActionCenter = createServerFn({ method: "GET" })
+export const getActionCenter = localFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
@@ -78,7 +78,7 @@ export const getActionCenter = createServerFn({ method: "GET" })
     });
   });
 
-export const setActionStatus = createServerFn({ method: "POST" })
+export const setActionStatus = localFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ reviewId: z.string().uuid(), scanId: z.string().uuid(), status: z.enum(ACTION_STATUSES), note: z.string().max(1000).optional() }).parse(d))
   .handler(async ({ data, context }) => {
@@ -91,7 +91,7 @@ export const setActionStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const getQualityCenter = createServerFn({ method: "GET" })
+export const getQualityCenter = localFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
@@ -137,14 +137,14 @@ export const getQualityCenter = createServerFn({ method: "GET" })
     };
   });
 
-export const getErrorCenter = createServerFn({ method: "GET" })
+export const getErrorCenter = localFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await context.supabase.from("error_events").select("*").order("created_at", { ascending: false }).limit(200);
     return data ?? [];
   });
 
-export const setErrorStatus = createServerFn({ method: "POST" })
+export const setErrorStatus = localFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid(), status: z.enum(["OPEN", "INVESTIGATING", "FIXED", "VERIFIED"]), resolution: z.string().max(1000).optional() }).parse(d))
   .handler(async ({ data, context }) => {
@@ -153,7 +153,7 @@ export const setErrorStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const getSystemQuality = createServerFn({ method: "GET" })
+export const getSystemQuality = localFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;

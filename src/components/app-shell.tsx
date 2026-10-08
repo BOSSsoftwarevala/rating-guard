@@ -5,6 +5,7 @@ import { APP_DOMAIN } from "@/lib/config";
 import { useState, type ReactNode } from "react";
 import { LayoutDashboard, ScanSearch, History, FileText, Settings, LogOut, Menu, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import shield from "@/assets/icon-shield.png";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
@@ -19,12 +20,10 @@ const nav = [
 function Brand() {
   return (
     <div className="flex items-center gap-2.5 px-2">
-      <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-[var(--shadow-glow)]">
-        <Star className="h-4 w-4 text-star" fill="currentColor" strokeWidth={0} />
-      </div>
+      <img src={shield} alt="" width={40} height={40} className="icon-3d size-10" />
       <div className="leading-tight">
-        <div className="text-sm font-bold tracking-tight">Review Scanner</div>
-        <div className="text-[11px] text-muted-foreground">Google review &amp; rating</div>
+        <div className="font-display text-sm font-bold tracking-tight">The Rating <span className="text-gradient">Guard</span></div>
+        <div className="text-[11px] text-muted-foreground">Super Admin Console</div>
       </div>
     </div>
   );
@@ -47,7 +46,7 @@ function SidebarBody({ email, onNavigate }: { email: string; onNavigate?: () => 
         {nav.map(({ to, label, Icon }) => (
           <Link key={to} to={to} onClick={onNavigate}
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-            activeProps={{ className: "bg-sidebar-accent !text-sidebar-accent-foreground" }}>
+            activeProps={{ className: "bg-sidebar-accent !text-sidebar-accent-foreground shadow-[inset_2px_0_0_var(--primary)]" }}>
             <Icon className="h-4 w-4" /> {label}
           </Link>
         ))}
@@ -72,7 +71,7 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
   const [open, setOpen] = useState(false);
   return (
     <div className="min-h-screen">
-      <aside className="no-print fixed inset-y-0 left-0 hidden w-60 border-r bg-sidebar lg:block">
+      <aside className="no-print fixed inset-y-0 left-0 hidden w-60 border-r bg-sidebar backdrop-blur-xl lg:block">
         <SidebarBody email={email} />
       </aside>
       <header className="no-print sticky top-0 z-30 flex items-center justify-between border-b bg-card/80 px-4 py-3 backdrop-blur lg:hidden">

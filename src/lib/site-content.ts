@@ -56,7 +56,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     { label: "Contact", href: "/contact" },
   ],
   socialLinks: [],
-  seoTitle: "Google Review Intelligence & Risk Analysis",
+  seoTitle: "The Rating Guard — Google Review Intelligence & Risk Analysis",
   seoDescription: "Understand your Google reviews, see the evidence behind potentially policy-relevant content, and take responsible, policy-aligned action.",
 };
 

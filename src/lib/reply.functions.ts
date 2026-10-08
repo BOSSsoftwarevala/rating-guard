@@ -1,6 +1,6 @@
-import { localFn } from "@/lib/mock-server";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/lib/mock-server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const REPLY_MODEL = "openai/gpt-6-astra";
 export const REPLY_TONES = ["professional", "friendly", "calm", "apologetic", "firm", "short", "detailed"] as const;
@@ -34,11 +34,13 @@ async function readStream(res: Response): Promise<string> {
 }
 
 /** Vala AI — review intelligence assistant: summary, risk explanation and an editable reply draft. */
-export const suggestReply = localFn({ method: "POST" })
+export const suggestReply = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ reviewId: z.string().uuid(), tone: z.enum(REPLY_TONES) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true; suggestion: ReplySuggestion } | { ok: false; message: string }> => {
     const { supabase, userId } = context;
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) return { ok: false, message: "AI service is not configured." };
 
     const { data: r, error } = await supabase
       .from("reviews")
@@ -50,23 +52,42 @@ export const suggestReply = localFn({ method: "POST" })
     const a: any = Array.isArray((r as any).review_analyses) ? (r as any).review_analyses[0] : (r as any).review_analyses;
     const s: any = (r as any).scans;
 
-    await new Promise((res) => setTimeout(res, 700));
-    const name = s?.business_name ?? "our team";
-    const first = String(r.author).split(" ")[0];
-    const risky = a && (a.risk === "high" || a.risk === "medium");
-    const T: Record<string, string> = { professional: "Thank you for your feedback", friendly: "Hi", calm: "Thank you for taking the time to share this", apologetic: "We are truly sorry", firm: "Thank you for your review", short: "Thanks", detailed: "Thank you for sharing your detailed experience" };
-    const open = `${T[data.tone]}, ${first}.`;
-    const body = r.rating >= 4
-      ? ` We're delighted you enjoyed your visit to ${name} and look forward to welcoming you again soon.`
-      : risky
-        ? ` We take every comment seriously, but we couldn't match these details to a visit in our records. Please contact us directly so we can understand and help.`
-        : ` We're sorry your experience didn't meet expectations. Please reach out to us directly so we can make this right.`;
-    const p = {
-      summary: r.text ? `${r.rating}★ review: "${String(r.text).slice(0, 80)}${String(r.text).length > 80 ? "…" : ""}"` : `${r.rating}★ rating without text.`,
-      riskExplanation: a?.reason ?? "No clear policy concern.",
-      recommendedAction: risky ? "Reply neutrally and consider Google's official reporting path." : "Reply politely to show you value feedback.",
-      reply: data.tone === "short" ? `${open}${r.rating >= 4 ? " See you again soon!" : " Please contact us directly so we can help."}` : open + body + (data.tone === "detailed" ? ` — Team ${name}` : ""),
-    };
+    const instructions = `You are Vala AI, a review intelligence assistant for a business owner replying to a Google review.
+Rules for the reply: address what the review actually says; never invent facts, names, dates or offers; never admit legal liability; never attack or accuse the reviewer; never promise impossible actions; never mention AI, internal analysis, risk flags or reporting; never claim Google removed anything; concise and human.
+Positive review → appreciation. Normal negative → calm customer-service reply inviting offline contact. Potentially risky → cautious, neutral reply.
+Tone requested: ${data.tone}.
+A negative review is not a policy violation. Explain risk only from the given analysis; if none, say no clear policy concern.
+Return ONLY JSON: {"summary": string (1 sentence), "riskExplanation": string (1-2 sentences), "recommendedAction": string (1 sentence), "reply": string}`;
+    const input = `Business: ${s?.business_name ?? "the business"} (${s?.category ?? "unknown category"})
+Reviewer: ${r.author}
+Rating: ${r.rating}/5
+Review text: ${r.text || "(no text — rating only)"}
+Analysis: ${a ? `risk=${a.risk}; category=${a.category ?? "none"}; reason=${a.reason ?? "-"}; evidence=${a.evidence ?? "-"}` : "not analyzed"}`;
+
+    let res: Response;
+    try {
+      res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "fetch" },
+        body: JSON.stringify({
+          model: REPLY_MODEL, instructions, input: [{ role: "user", content: input }],
+          stream: true, store: false, reasoning: { effort: "low", summary: "auto" }, include: ["reasoning.encrypted_content"],
+        }),
+      });
+    } catch { return { ok: false, message: "AI service is unreachable. Try again shortly." }; }
+    if (!res.ok) {
+      let msg = "";
+      try { const j = await res.json(); msg = j?.error?.message ?? j?.message ?? ""; } catch { /* noop */ }
+      if (res.status === 429) return { ok: false, message: "AI is rate limited. Wait a minute and try again." };
+      if (res.status === 402) return { ok: false, message: msg || "AI credits are exhausted. Add credits in workspace settings." };
+      return { ok: false, message: msg || `AI service error [${res.status}].` };
+    }
+    let text: string;
+    try { text = await readStream(res); } catch (e) { return { ok: false, message: e instanceof Error ? e.message : "AI request failed." }; }
+    let p: any;
+    try { p = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, "")); } catch { return { ok: false, message: "The reply suggestion could not be read. Try again." }; }
+    if (!p?.reply) return { ok: false, message: "The AI returned no reply." };
+
     await supabase.from("audit_log").insert({ user_id: userId, action: "review.reply_suggested", detail: { review_id: r.id, scan_id: r.scan_id, tone: data.tone, model: REPLY_MODEL } });
     return { ok: true, suggestion: { summary: String(p.summary ?? ""), riskExplanation: String(p.riskExplanation ?? ""), recommendedAction: String(p.recommendedAction ?? ""), reply: String(p.reply), tone: data.tone, model: REPLY_MODEL } };
   });

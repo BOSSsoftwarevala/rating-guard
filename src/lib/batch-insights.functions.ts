@@ -1,6 +1,6 @@
-import { localFn } from "@/lib/mock-server";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/lib/mock-server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const INSIGHTS_MODEL = "openai/gpt-6-astra";
 
@@ -13,7 +13,7 @@ export type BatchInsights = {
 };
 
 /** Completed batches (with at least one completed scan) for the picker. */
-export const listCompletedBatches = localFn({ method: "GET" })
+export const listCompletedBatches = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await context.supabase
@@ -57,11 +57,13 @@ async function readResponsesStream(res: Response): Promise<string> {
   return text;
 }
 
-export const generateBatchInsights = localFn({ method: "POST" })
+export const generateBatchInsights = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ batchId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true; insights: BatchInsights } | { ok: false; message: string }> => {
     const { supabase, userId } = context;
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) return { ok: false, message: "AI service is not configured." };
 
     const { data: scans, error } = await supabase
       .from("scans")
@@ -86,18 +88,38 @@ Return ONLY a JSON object, no markdown, with this shape:
  "themes": [{"theme": string, "detail": string (1 sentence), "businesses": [business names]}] (3-6 items),
  "priorities": [{"business": exact business name, "priority": "high"|"medium"|"low", "reason": string (1 sentence), "action": string (1 short sentence)}] (every business, sorted most urgent first)}`;
 
-    const flaggedOf = (x: any) => x.high_count + x.medium_count;
-    const sorted = [...scans].sort((x: any, y: any) => flaggedOf(y) - flaggedOf(x));
-    const parsed: any = {
-      overview: `${scans.length} businesses analyzed. ${sorted.filter((x: any) => flaggedOf(x) > 0).length} show potentially policy-relevant reviews; the rest reflect genuine customer feedback.`,
-      themes: [
-        { theme: "Service delays", detail: "Several reviews mention waiting time and slow responses at peak hours.", businesses: sorted.slice(0, 2).map((x: any) => x.business_name) },
-        { theme: "Pricing transparency", detail: "Customers ask for clearer bill breakups and upfront pricing.", businesses: sorted.slice(1, 3).map((x: any) => x.business_name) },
-      ],
-      priorities: sorted.map((x: any) => ({ business: x.business_name, priority: flaggedOf(x) >= 2 ? "high" : flaggedOf(x) === 1 ? "medium" : "low",
-        reason: flaggedOf(x) ? `${flaggedOf(x)} flagged review(s) with policy signals.` : "No policy concerns detected.",
-        action: flaggedOf(x) ? "Verify evidence and use Google's official report path." : "Reply to recent reviews to maintain engagement." })),
-    };
+    let res: Response;
+    try {
+      res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "fetch" },
+        body: JSON.stringify({
+          model: INSIGHTS_MODEL,
+          instructions,
+          input: [{ role: "user", content: digest }],
+          stream: true,
+          store: false,
+          reasoning: { effort: "low", summary: "auto" },
+          include: ["reasoning.encrypted_content"],
+        }),
+      });
+    } catch {
+      return { ok: false, message: "AI service is unreachable. Try again shortly." };
+    }
+    if (!res.ok) {
+      let msg = "";
+      try { const j = await res.json(); msg = j?.error?.message ?? j?.message ?? ""; } catch { /* noop */ }
+      if (res.status === 429) return { ok: false, message: "AI is rate limited. Wait a minute and try again." };
+      if (res.status === 402) return { ok: false, message: msg || "AI credits are exhausted. Add credits in workspace settings." };
+      return { ok: false, message: msg || `AI service error [${res.status}].` };
+    }
+
+    let text: string;
+    try { text = await readResponsesStream(res); } catch (e) { return { ok: false, message: e instanceof Error ? e.message : "AI request failed." }; }
+    if (!text.trim()) return { ok: false, message: "The AI returned no summary." };
+    let parsed: any;
+    try { parsed = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, "")); } catch { return { ok: false, message: "The AI summary could not be read. Try again." }; }
+
     const pr = ["high", "medium", "low"];
     const insights: BatchInsights = {
       overview: String(parsed.overview ?? ""),

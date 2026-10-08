@@ -2,9 +2,11 @@
  * Local demo database + auth that mimics the subset of the Supabase JS API this app uses.
  * Data lives in memory and is persisted to localStorage in the browser. No network calls.
  */
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./types";
 import { buildSeed, SUPER_ADMIN } from "@/lib/seed";
 
-type Row = Record<string, any>;
+type Row = any;
 type DB = Record<string, Row[]>;
 type Res = { data: any; error: { message: string } | null; count?: number | null };
 
@@ -189,4 +191,4 @@ const storage = {
   }),
 };
 
-export const supabase = { from: (t: string) => new Query(t), auth, storage };
+export const supabase = { from: (t: string) => new Query(t), auth, storage } as unknown as SupabaseClient<Database>;

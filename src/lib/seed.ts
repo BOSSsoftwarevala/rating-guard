@@ -82,7 +82,7 @@ export function healthScore(rating: number | null, reviews: { rating: number }[]
 
 export function buildSeed() {
   const uid = SUPER_ADMIN.id;
-  const db: Record<string, any[]> = {
+  const db: any = {
     scans: [], reviews: [], review_analyses: [], reports: [], businesses: [], scan_events: [], error_events: [], audit_log: [],
     review_actions: [], scan_batches: [], debug_findings: [], profiles: [], site_content: [],
   };

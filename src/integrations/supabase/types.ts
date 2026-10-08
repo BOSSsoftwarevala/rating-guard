@@ -208,6 +208,24 @@ export type Database = {
           },
         ]
       }
+      place_cache: {
+        Row: {
+          fetched_at: string
+          payload: Json
+          place_key: string
+        }
+        Insert: {
+          fetched_at?: string
+          payload: Json
+          place_key: string
+        }
+        Update: {
+          fetched_at?: string
+          payload?: Json
+          place_key?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_path: string | null
@@ -556,6 +574,69 @@ export type Database = {
           },
         ]
       }
+      scan_jobs: {
+        Row: {
+          attempts: number
+          batch_id: string
+          created_at: string
+          error: string | null
+          id: string
+          locked_until: string | null
+          next_run_at: string
+          position: number
+          scan_id: string | null
+          status: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          batch_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          locked_until?: string | null
+          next_run_at?: string
+          position?: number
+          scan_id?: string | null
+          status?: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          batch_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          locked_until?: string | null
+          next_run_at?: string
+          position?: number
+          scan_id?: string | null
+          status?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_jobs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "scan_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_jobs_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scans: {
         Row: {
           address: string | null
@@ -700,15 +781,97 @@ export type Database = {
         }
         Relationships: []
       }
+      system_state: {
+        Row: {
+          daily_link_cap: number
+          id: string
+          last_worker_run: string | null
+          pause_reason: string | null
+          paused_at: string | null
+          queue_paused: boolean
+          updated_at: string
+          worker_lock_until: string | null
+        }
+        Insert: {
+          daily_link_cap?: number
+          id?: string
+          last_worker_run?: string | null
+          pause_reason?: string | null
+          paused_at?: string | null
+          queue_paused?: boolean
+          updated_at?: string
+          worker_lock_until?: string | null
+        }
+        Update: {
+          daily_link_cap?: number
+          id?: string
+          last_worker_run?: string | null
+          pause_reason?: string | null
+          paused_at?: string | null
+          queue_paused?: boolean
+          updated_at?: string
+          worker_lock_until?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      acquire_worker_lock: { Args: { _seconds: number }; Returns: boolean }
+      claim_scan_jobs: {
+        Args: { _limit: number }
+        Returns: {
+          attempts: number
+          batch_id: string
+          created_at: string
+          error: string | null
+          id: string
+          locked_until: string | null
+          next_run_at: string
+          position: number
+          scan_id: string | null
+          status: string
+          updated_at: string
+          url: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "scan_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -835,6 +998,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

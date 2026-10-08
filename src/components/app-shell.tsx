@@ -7,7 +7,6 @@ import { LayoutDashboard, ScanSearch, History, FileText, Settings, LogOut, Menu,
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
@@ -62,7 +61,6 @@ function SidebarBody({ email, onNavigate }: { email: string; onNavigate?: () => 
           <button onClick={logout} className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent">
             <LogOut className="h-4 w-4" /> Logout
           </button>
-          <ThemeToggle />
         </div>
         <div className="px-3 pt-2 text-[10px] text-muted-foreground">{APP_DOMAIN}</div>
       </div>
@@ -80,7 +78,6 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
       <header className="no-print sticky top-0 z-30 flex items-center justify-between border-b bg-card/80 px-4 py-3 backdrop-blur lg:hidden">
         <Brand />
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <Button size="sm" asChild><Link to="/scan">Scan</Link></Button>
           <Button size="icon" variant="ghost" onClick={() => setOpen(true)} aria-label="Open menu"><Menu /></Button>
         </div>

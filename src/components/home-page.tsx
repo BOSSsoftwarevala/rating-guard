@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, BadgeCheck, BarChart3, Eye, FileText, Flag, Lock, MessageSquareText, ScanSearch, Search, Send, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ThemeToggle } from "@/components/theme-toggle";
 import type { SiteContent } from "@/lib/site-content";
 
 function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -74,7 +73,6 @@ export function HomePage({ c, preview }: { c: SiteContent; preview?: boolean }) 
             <a href="#faq" className="hover:text-foreground">FAQ</a>
           </div>
           <div className="ml-auto flex items-center gap-2 md:ml-0">
-            <ThemeToggle />
             <Button asChild size="sm"><Link to="/auth">{c.ctaPrimary}</Link></Button>
           </div>
         </nav>

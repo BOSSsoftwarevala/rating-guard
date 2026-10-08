@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const INSIGHTS_MODEL = "openai/gpt-6-astra";
+export const INSIGHTS_MODEL = "gpt-4.1-mini";
 
 export type BatchInsights = {
   overview: string;
@@ -62,8 +62,8 @@ export const generateBatchInsights = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ batchId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true; insights: BatchInsights } | { ok: false; message: string }> => {
     const { supabase, userId } = context;
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) return { ok: false, message: "AI service is not configured." };
+    const apiKey = process.env["OPENAI_API_KEY"];
+    if (!apiKey) return { ok: false, message: "AI service is not configured — OPENAI_API_KEY missing." };
 
     const { data: scans, error } = await supabase
       .from("scans")
@@ -90,17 +90,15 @@ Return ONLY a JSON object, no markdown, with this shape:
 
     let res: Response;
     try {
-      res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+      res = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "fetch" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: INSIGHTS_MODEL,
           instructions,
           input: [{ role: "user", content: digest }],
           stream: true,
           store: false,
-          reasoning: { effort: "low", summary: "auto" },
-          include: ["reasoning.encrypted_content"],
         }),
       });
     } catch {
@@ -110,7 +108,7 @@ Return ONLY a JSON object, no markdown, with this shape:
       let msg = "";
       try { const j = await res.json(); msg = j?.error?.message ?? j?.message ?? ""; } catch { /* noop */ }
       if (res.status === 429) return { ok: false, message: "AI is rate limited. Wait a minute and try again." };
-      if (res.status === 402) return { ok: false, message: msg || "AI credits are exhausted. Add credits in workspace settings." };
+      if (res.status === 402) return { ok: false, message: msg || "OpenAI quota reached. Add credit to your OpenAI account." };
       return { ok: false, message: msg || `AI service error [${res.status}].` };
     }
 

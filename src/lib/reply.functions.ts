@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const REPLY_MODEL = "openai/gpt-6-astra";
+export const REPLY_MODEL = "gpt-4.1-mini";
 export const REPLY_TONES = ["professional", "friendly", "calm", "apologetic", "firm", "short", "detailed"] as const;
 
 export type ReplySuggestion = { summary: string; riskExplanation: string; recommendedAction: string; reply: string; tone: string; model: string };
@@ -39,8 +39,8 @@ export const suggestReply = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ reviewId: z.string().uuid(), tone: z.enum(REPLY_TONES) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true; suggestion: ReplySuggestion } | { ok: false; message: string }> => {
     const { supabase, userId } = context;
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) return { ok: false, message: "AI service is not configured." };
+    const apiKey = process.env["OPENAI_API_KEY"];
+    if (!apiKey) return { ok: false, message: "AI service is not configured — OPENAI_API_KEY missing." };
 
     const { data: r, error } = await supabase
       .from("reviews")
@@ -66,12 +66,12 @@ Analysis: ${a ? `risk=${a.risk}; category=${a.category ?? "none"}; reason=${a.re
 
     let res: Response;
     try {
-      res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+      res = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "fetch" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: REPLY_MODEL, instructions, input: [{ role: "user", content: input }],
-          stream: true, store: false, reasoning: { effort: "low", summary: "auto" }, include: ["reasoning.encrypted_content"],
+          stream: true, store: false,
         }),
       });
     } catch { return { ok: false, message: "AI service is unreachable. Try again shortly." }; }
@@ -79,7 +79,7 @@ Analysis: ${a ? `risk=${a.risk}; category=${a.category ?? "none"}; reason=${a.re
       let msg = "";
       try { const j = await res.json(); msg = j?.error?.message ?? j?.message ?? ""; } catch { /* noop */ }
       if (res.status === 429) return { ok: false, message: "AI is rate limited. Wait a minute and try again." };
-      if (res.status === 402) return { ok: false, message: msg || "AI credits are exhausted. Add credits in workspace settings." };
+      if (res.status === 402) return { ok: false, message: msg || "OpenAI quota reached. Add credit to your OpenAI account." };
       return { ok: false, message: msg || `AI service error [${res.status}].` };
     }
     let text: string;

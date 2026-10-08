@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_authenticated/profile")({
-  head: () => ({ meta: [{ title: "Admin Profile — Review & Rating Scanner" }, { name: "description", content: "Admin profile, security and session." }] }),
+  head: () => ({ meta: [{ title: "Admin Profile — The Rating Guard" }, { name: "description", content: "Admin profile, security and session." }] }),
   component: ProfilePage,
 });
 

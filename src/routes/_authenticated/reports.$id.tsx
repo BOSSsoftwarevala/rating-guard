@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/reports/$id")({
   validateSearch: z.object({ print: z.boolean().optional() }),
-  head: () => ({ meta: [{ title: "Review Risk Report — Review & Rating Scanner" }, { name: "description", content: "Google review risk evidence report." }] }),
+  head: () => ({ meta: [{ title: "Review Risk Report — The Rating Guard" }, { name: "description", content: "Google review risk evidence report." }] }),
   component: ReportDetail,
 });
 

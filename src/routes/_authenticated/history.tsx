@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/history")({
-  head: () => ({ meta: [{ title: "Scan History — Review & Rating Scanner" }, { name: "description", content: "Searchable history of Google review scans." }] }),
+  head: () => ({ meta: [{ title: "Scan History — The Rating Guard" }, { name: "description", content: "Searchable history of Google review scans." }] }),
   component: HistoryPage,
 });
 

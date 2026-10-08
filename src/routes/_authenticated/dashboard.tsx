@@ -8,7 +8,7 @@ import { Stars, RiskBadge, DevTag, ratingTone } from "@/components/review-ui";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Review & Rating Scanner" }, { name: "description", content: "Overview of Google review scans and risk." }] }),
+  head: () => ({ meta: [{ title: "Dashboard — The Rating Guard" }, { name: "description", content: "Overview of Google review scans and risk." }] }),
   component: Dashboard,
 });
 
@@ -35,7 +35,7 @@ function Dashboard() {
 
   return (
     <>
-      <PageHeader title="Google Review & Rating Scanner" subtitle="Scan, analyze and report potentially policy-risk Google reviews."
+      <PageHeader title="Google The Rating Guard" subtitle="Scan, analyze and report potentially policy-risk Google reviews."
         action={<Button asChild size="lg"><Link to="/scan"><Plus /> New Scan</Link></Button>} />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((k, i) => (

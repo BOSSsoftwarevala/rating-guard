@@ -4,6 +4,10 @@ import { ArrowRight, BadgeCheck, BarChart3, Eye, FileText, Flag, Lock, MessageSq
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import type { SiteContent } from "@/lib/site-content";
+import shield from "@/assets/icon-shield.png";
+import scanIcon from "@/assets/icon-scan.png";
+import reportIcon from "@/assets/icon-report.png";
+import alertIcon from "@/assets/icon-alert.png";
 
 function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -23,8 +27,11 @@ function HeroVisual() {
   useEffect(() => { const t = setInterval(() => setS((x) => (x + 1) % STAGES.length), 1600); return () => clearInterval(t); }, []);
   return (
     <div className="relative mx-auto w-full max-w-md" aria-hidden>
-      <div className="absolute -inset-6 rounded-[2rem] bg-primary/10 blur-2xl" />
-      <div className="surface relative overflow-hidden p-5">
+      <div className="absolute -inset-6 rounded-[2rem] bg-primary/15 blur-3xl" />
+      <img src={scanIcon} alt="" width={120} height={120} className="icon-3d animate-float absolute -left-14 -top-12 z-10 w-28" />
+      <img src={alertIcon} alt="" width={96} height={96} className="icon-3d animate-float absolute -bottom-10 -right-10 z-10 w-24 [animation-delay:1.5s]" />
+      <img src={reportIcon} alt="" width={90} height={90} className="icon-3d animate-float absolute -right-12 -top-8 z-10 w-20 [animation-delay:3s]" />
+      <div className="surface neon-outline relative overflow-hidden p-5">
         {s === 1 && <div className="pointer-events-none absolute inset-x-0 h-16 animate-[scan_1.6s_ease-in-out] bg-gradient-to-b from-transparent via-primary/15 to-transparent" />}
         <div className="flex items-center gap-3">
           <div className="grid size-9 place-items-center rounded-full bg-secondary font-semibold text-secondary-foreground">J</div>
@@ -64,9 +71,9 @@ export function HomePage({ c, preview }: { c: SiteContent; preview?: boolean }) 
       {preview && <div className="bg-risk-medium/20 py-2 text-center text-sm font-medium">Draft preview — not yet published</div>}
       {c.announcement && <div className="bg-primary py-2 text-center text-sm text-primary-foreground">{c.announcement}</div>}
 
-      <header className="sticky top-0 z-30 border-b border-card-border bg-background/80 backdrop-blur">
+      <header className="glass sticky top-0 z-30 border-x-0 border-t-0">
         <nav className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4">
-          <a href="#top" className="flex items-center gap-2 font-bold"><span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground"><ScanSearch className="size-4" /></span><span className="hidden sm:inline">Review Intelligence</span></a>
+          <a href="#top" className="flex items-center gap-2 font-bold"><img src={shield} alt="" width={36} height={36} className="icon-3d size-9" /><span className="hidden font-display sm:inline">The Rating <span className="text-gradient">Guard</span></span></a>
           <div className="ml-auto hidden items-center gap-6 text-sm text-muted-foreground md:flex">
             <a href="#how" className="hover:text-foreground">How it works</a>
             <a href="#reporting" className="hover:text-foreground">Reports</a>
@@ -82,7 +89,7 @@ export function HomePage({ c, preview }: { c: SiteContent; preview?: boolean }) 
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-2 md:py-24">
           <Reveal>
             <p className="inline-flex items-center gap-2 rounded-full border border-card-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground"><ShieldCheck className="size-3.5 text-risk-normal" /> Policy-aligned review intelligence</p>
-            <h1 className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-tight md:text-5xl lg:text-6xl">{c.heroTitle}</h1>
+            <h1 className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-tight md:text-5xl lg:text-6xl">{c.heroTitle.split(". ")[0]}.{" "}<span className="text-gradient">{c.heroTitle.split(". ").slice(1).join(". ")}</span></h1>
             <p className="mt-5 text-lg text-muted-foreground">{c.heroSubtitle}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg"><Link to="/auth">{c.ctaPrimary} <ArrowRight /></Link></Button>

@@ -3,10 +3,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/responsible-use")({
   head: () => ({
     meta: [
-      { title: "Responsible Use — Google Review & Rating Scanner" },
-      { name: "description", content: "How to use the Google Review & Rating Scanner responsibly and in line with Google's review policies." },
-      { property: "og:title", content: "Responsible Use — Google Review & Rating Scanner" },
-      { property: "og:description", content: "How to use the Google Review & Rating Scanner responsibly and in line with Google's review policies." },
+      { title: "Responsible Use — Google The Rating Guard" },
+      { name: "description", content: "How to use the Google The Rating Guard responsibly and in line with Google's review policies." },
+      { property: "og:title", content: "Responsible Use — Google The Rating Guard" },
+      { property: "og:description", content: "How to use the Google The Rating Guard responsibly and in line with Google's review policies." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

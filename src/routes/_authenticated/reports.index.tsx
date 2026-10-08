@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { BatchInsightsPanel } from "@/components/batch-insights";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
-  head: () => ({ meta: [{ title: "Reports — Review & Rating Scanner" }, { name: "description", content: "Google review risk evidence reports." }] }),
+  head: () => ({ meta: [{ title: "Reports — The Rating Guard" }, { name: "description", content: "Google review risk evidence reports." }] }),
   component: ReportsPage,
 });
 

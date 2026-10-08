@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { BulkScan } from "@/components/bulk-scan";
 
 export const Route = createFileRoute("/_authenticated/scan")({
-  head: () => ({ meta: [{ title: "New Scan — Review & Rating Scanner" }, { name: "description", content: "Scan a Google business for review policy risk." }] }),
+  head: () => ({ meta: [{ title: "New Scan — The Rating Guard" }, { name: "description", content: "Scan a Google business for review policy risk." }] }),
   component: ScanPage,
 });
 

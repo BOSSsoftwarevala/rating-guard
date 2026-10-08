@@ -10,10 +10,10 @@ import { APP_NAME, APP_DOMAIN } from "@/lib/config";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Review & Rating Scanner" },
-      { name: "description", content: "Admin sign in for the Google Review & Rating Scanner." },
-      { property: "og:title", content: "Sign in — Review & Rating Scanner" },
-      { property: "og:description", content: "Admin sign in for the Google Review & Rating Scanner." },
+      { title: "Sign in — The Rating Guard" },
+      { name: "description", content: "Admin sign in for the Google The Rating Guard." },
+      { property: "og:title", content: "Sign in — The Rating Guard" },
+      { property: "og:description", content: "Admin sign in for the Google The Rating Guard." },
     ],
   }),
   component: AuthPage,

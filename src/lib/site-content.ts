@@ -48,7 +48,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     { q: "What happens if Google data is unavailable?", a: "You see the exact reason. We never show invented reviews, ratings or results.", visible: true },
   ],
   footerTagline: "Google review intelligence and policy-aligned risk analysis.",
-  contactEmail: "removalwork59@gmail.com",
+  contactEmail: "theratingguard@gmail.com",
   footerLinks: [
     { label: "Privacy", href: "/privacy" },
     { label: "Terms", href: "/terms" },

@@ -3,10 +3,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Google Review & Rating Scanner" },
-      { name: "description", content: "How the Google Review & Rating Scanner collects, uses, stores and protects your data." },
-      { property: "og:title", content: "Privacy Policy — Google Review & Rating Scanner" },
-      { property: "og:description", content: "How the Google Review & Rating Scanner collects, uses, stores and protects your data." },
+      { title: "Privacy Policy — Google The Rating Guard" },
+      { name: "description", content: "How the Google The Rating Guard collects, uses, stores and protects your data." },
+      { property: "og:title", content: "Privacy Policy — Google The Rating Guard" },
+      { property: "og:description", content: "How the Google The Rating Guard collects, uses, stores and protects your data." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -18,7 +18,7 @@ const sections: { h: string; body: string[] }[] = [
   {
     h: "1. Who we are",
     body: [
-      "Google Review & Rating Scanner (“the Service”) is operated by Removal Work Solution, reachable at removalwork59@gmail.com. This policy explains what data we handle when you use the Service.",
+      "Google The Rating Guard (“the Service”) is operated by Removal Work Solution, reachable at removalwork59@gmail.com. This policy explains what data we handle when you use the Service.",
       "The Service is an independent tool. It is not affiliated with, endorsed by, or sponsored by Google.",
     ],
   },

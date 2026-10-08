@@ -55,9 +55,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Review & Rating Scanner — Google review risk analysis" },
+      { title: "The Rating Guard — Google review risk analysis" },
       { name: "description", content: "Scan, analyze and report potentially problematic Google reviews." },
-      { property: "og:title", content: "Review & Rating Scanner — Google review risk analysis" },
+      { property: "og:title", content: "The Rating Guard — Google review risk analysis" },
       { property: "og:description", content: "Scan, analyze and report potentially problematic Google reviews." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -67,7 +67,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" },
     ],
   }),
   shellComponent: RootShell,
@@ -78,14 +78,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem("rs-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`,
-          }}
-        />
       </head>
       <body>
         {children}

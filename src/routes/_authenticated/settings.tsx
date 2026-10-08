@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "Settings — Review & Rating Scanner" }, { name: "description", content: "Account, API, database and system health." }] }),
+  head: () => ({ meta: [{ title: "Settings — The Rating Guard" }, { name: "description", content: "Account, API, database and system health." }] }),
   component: SettingsPage,
 });
 

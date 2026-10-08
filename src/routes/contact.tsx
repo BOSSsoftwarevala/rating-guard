@@ -7,10 +7,10 @@ export const Route = createFileRoute("/contact")({
   },
   head: () => ({
     meta: [
-      { title: "Contact — Google Review & Rating Scanner" },
-      { name: "description", content: "Get in touch about the Google Review & Rating Scanner, your account or a report." },
-      { property: "og:title", content: "Contact — Google Review & Rating Scanner" },
-      { property: "og:description", content: "Get in touch about the Google Review & Rating Scanner, your account or a report." },
+      { title: "Contact — Google The Rating Guard" },
+      { name: "description", content: "Get in touch about the Google The Rating Guard, your account or a report." },
+      { property: "og:title", content: "Contact — Google The Rating Guard" },
+      { property: "og:description", content: "Get in touch about the Google The Rating Guard, your account or a report." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

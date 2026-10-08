@@ -36,9 +36,9 @@ export async function track(supabase: any, userId: string, scanId: string, stage
 
 const MODULE: Record<string, string> = {
   INVALID_URL: "google", RESOLVE_FAILED: "google", NOT_FOUND: "google", RATE_LIMIT: "google", API_UNAVAILABLE: "google", GOOGLE_ERROR: "google", NETWORK: "google",
-  NO_REVIEWS: "google", AI_UNAVAILABLE: "ai", DB_UNAVAILABLE: "database", REPORT_ERROR: "report", TIMEOUT: "scan", INSUFFICIENT_DATA: "scan",
+  NO_REVIEWS: "google", AI_UNAVAILABLE: "ai", AI_QUOTA: "ai", AI_AUTH: "ai", DB_UNAVAILABLE: "database", REPORT_ERROR: "report", TIMEOUT: "scan", INSUFFICIENT_DATA: "scan",
 };
-const SEVERITY: Record<string, string> = { DB_UNAVAILABLE: "HIGH", AI_UNAVAILABLE: "HIGH", REPORT_ERROR: "HIGH", RATE_LIMIT: "MEDIUM", GOOGLE_ERROR: "MEDIUM", TIMEOUT: "MEDIUM" };
+const SEVERITY: Record<string, string> = { AI_QUOTA: "CRITICAL", AI_AUTH: "CRITICAL", API_UNAVAILABLE: "CRITICAL", DB_UNAVAILABLE: "HIGH", AI_UNAVAILABLE: "HIGH", REPORT_ERROR: "HIGH", RATE_LIMIT: "MEDIUM", GOOGLE_ERROR: "MEDIUM", TIMEOUT: "MEDIUM" };
 
 export async function recordError(supabase: any, userId: string, e: { code: string; message: string; scanId?: string | null; business?: string | null; route?: string }) {
   await supabase.from("error_events").insert({

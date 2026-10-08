@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocalFn } from "@/lib/mock-server";
+import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ const Fail = ({ e }: { e: unknown }) => <div className="p-6 text-sm text-risk-hi
 
 /** Dashboard: Scan Operations / Tracking */
 export function OperationsPanel() {
-  const fn = useLocalFn(getOperations);
+  const fn = useServerFn(getOperations);
   const q = useQuery({ queryKey: ["ops"], queryFn: () => fn(), refetchInterval: (qq) => (qq.state.data?.kpi.running ? 4000 : false) });
   if (q.isLoading) return <section className="surface mt-6"><Loading /></section>;
   if (q.error || !q.data) return <section className="surface mt-6"><Fail e={q.error} /></section>;
@@ -67,7 +67,7 @@ export function OperationsPanel() {
 
 /** Report page: lifecycle timeline */
 export function ScanTimeline({ scanId, isSeed }: { scanId: string; isSeed: boolean }) {
-  const fn = useLocalFn(getScanEvents);
+  const fn = useServerFn(getScanEvents);
   const q = useQuery({ queryKey: ["events", scanId], queryFn: () => fn({ data: { scanId } }) });
   return (
     <section className="surface no-print mt-6 p-5">
@@ -88,8 +88,8 @@ export function ScanTimeline({ scanId, isSeed }: { scanId: string; isSeed: boole
 
 /** Reports: Review Action Center */
 export function ActionCenter() {
-  const fn = useLocalFn(getActionCenter);
-  const save = useLocalFn(setActionStatus);
+  const fn = useServerFn(getActionCenter);
+  const save = useServerFn(setActionStatus);
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["actions"], queryFn: () => fn() });
   const [filter, setFilter] = useState<string>("all");
@@ -162,7 +162,7 @@ function Bars({ data, k, label, tone }: { data: Record<string, any>[]; k: string
 
 /** Reports: Reporting & Quality Center */
 export function QualityCenter() {
-  const fn = useLocalFn(getQualityCenter);
+  const fn = useServerFn(getQualityCenter);
   const q = useQuery({ queryKey: ["quality"], queryFn: () => fn() });
   if (q.isLoading) return <div className="surface"><Loading /></div>;
   if (q.error || !q.data) return <div className="surface"><Fail e={q.error} /></div>;
@@ -208,8 +208,8 @@ const STATUS_TONE: Record<string, string> = { OPEN: "text-risk-high", INVESTIGAT
 
 /** Settings: System Error Center */
 export function ErrorCenter() {
-  const fn = useLocalFn(getErrorCenter);
-  const save = useLocalFn(setErrorStatus);
+  const fn = useServerFn(getErrorCenter);
+  const save = useServerFn(setErrorStatus);
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["errors"], queryFn: () => fn() });
   async function change(id: string, status: "OPEN" | "INVESTIGATING" | "FIXED" | "VERIFIED") {
@@ -245,7 +245,7 @@ export function ErrorCenter() {
 
 /** Settings: System Quality Dashboard + Debug Findings */
 export function SystemQuality({ health }: { health: { name: string; status: string }[] | undefined }) {
-  const fn = useLocalFn(getSystemQuality);
+  const fn = useServerFn(getSystemQuality);
   const q = useQuery({ queryKey: ["system-quality"], queryFn: () => fn() });
   const h = (n: string) => health?.find((c) => c.name === n)?.status;
   const label = (s: string | undefined) => (s === "healthy" ? "HEALTHY" : s === "warning" ? "WARNING" : s ? "CRITICAL" : "…");

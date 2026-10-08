@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocalFn } from "@/lib/mock-server";
+import { useServerFn } from "@tanstack/react-start";
 import { Copy, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { suggestReply, REPLY_TONES, type ReplySuggestion } from "@/lib/reply.functions";
 
 export function ReplyAssistant({ reviewId }: { reviewId: string }) {
-  const run = useLocalFn(suggestReply);
+  const run = useServerFn(suggestReply);
   const [tone, setTone] = useState<(typeof REPLY_TONES)[number]>("professional");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

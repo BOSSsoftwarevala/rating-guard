@@ -19,13 +19,13 @@ export const getSystemStatus = createServerFn({ method: "GET" })
     const tables = await Promise.all(["businesses", "review_analyses", "reports", "audit_log"].map((t) =>
       context.supabase.from(t as "reports").select("id", { head: true, count: "exact" })));
     const migrationsOk = tables.every((r) => !r.error);
-    const googleConfigured = Boolean((process.env["GOOGLE_PLACES_API_KEY"] || process.env["GOOGLE_MAPS_API_KEY"] || process.env["GOOGLE_API_KEY"]));
-    const aiConfigured = Boolean(process.env["LOVABLE_API_KEY"]);
+    const googleConfigured = Boolean(process.env["GOOGLE_PLACES_API_KEY"]);
+    const aiConfigured = Boolean(process.env["OPENAI_API_KEY"]);
     const checks: { name: string; status: Health; detail: string }[] = [
       { name: "Application", status: "healthy", detail: `Version ${APP_VERSION} responding` },
       { name: "Database", status: db.error ? "unavailable" : "healthy", detail: db.error ? db.error.message : `Responded in ${dbMs} ms` },
       { name: "Google API", status: googleConfigured ? "healthy" : "warning", detail: googleConfigured ? "Places API (New) key configured" : "Configuration required — GOOGLE_PLACES_API_KEY not set" },
-      { name: "AI service", status: aiConfigured ? "healthy" : "unavailable", detail: aiConfigured ? `${AI_PROVIDER} · ${ANALYSIS_MODEL}` : "AI key missing" },
+      { name: "AI service", status: aiConfigured ? "healthy" : "unavailable", detail: aiConfigured ? `${AI_PROVIDER} · ${ANALYSIS_MODEL}` : "OPENAI_API_KEY missing" },
       { name: "Storage", status: "healthy", detail: "Not required — reports are generated on demand" },
       { name: "Authentication", status: context.userId ? "healthy" : "unavailable", detail: "Admin session verified" },
     ];

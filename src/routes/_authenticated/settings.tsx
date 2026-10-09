@@ -112,6 +112,8 @@ function SettingsPage() {
           <Row k="Health" v={<span className="text-xs text-muted-foreground">{check("Database")?.detail ?? "—"}</span>} />
         </Card>
 
+        <QueueCard />
+
         <section className="surface p-6 lg:col-span-2">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>

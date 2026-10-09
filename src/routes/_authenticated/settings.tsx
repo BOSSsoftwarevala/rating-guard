@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { RefreshCw, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSystemStatus, getAuditLog, logAudit } from "@/lib/scan.functions";
+import { getQueueState, resumeQueue } from "@/lib/queue.functions";
 import { PageHeader } from "@/components/app-shell";
 import { APP_DOMAIN } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -153,7 +154,7 @@ function SettingsPage() {
           <ol className="list-decimal space-y-2 pl-5 text-sm">
             <li>Open Google Cloud Console → APIs &amp; Services and enable <b>Places API (New)</b> (billing required).</li>
             <li>Create an API key under Credentials. Restrict it to Places API (New). Set application restrictions to <b>None</b> or <b>IP addresses</b> — not websites.</li>
-            <li>Ask the assistant in the editor to add <span className="font-mono">GOOGLE_PLACES_API_KEY</span>. A secure form will appear for you to paste it.</li>
+            <li>Google Places and OpenAI keys are stored as server-only secrets (GOOGLE_PLACES_API_KEY, OPENAI_API_KEY).</li>
             <li>Click <b>Run health check</b> — the status turns to Configured and live scanning starts automatically.</li>
           </ol>
         </DialogContent>
@@ -165,5 +166,29 @@ function SettingsPage() {
       <SystemQuality health={sys?.checks} />
       <ErrorCenter />
     </>
+  );
+}
+
+function QueueCard() {
+  const getState = useServerFn(getQueueState);
+  const resume = useServerFn(resumeQueue);
+  const [q, setQ] = useState<Awaited<ReturnType<typeof getQueueState>> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const load = () => getState().then(setQ).catch(() => setQ(null));
+  useEffect(() => { void load(); }, []);
+  return (
+    <section className="surface p-6 lg:col-span-2">
+      <h2 className="mb-5 font-semibold">Bulk scan queue</h2>
+      <div className="space-y-4">
+        <Row k="Queue status" v={q ? <HBadge s={q.queue_paused ? "unavailable" : "healthy"} label={q.queue_paused ? "Paused" : "Running"} /> : <HBadge s={undefined} />} />
+        {q?.queue_paused && <Row k="Pause reason" v={<span className="text-sm text-risk-high">{q.pause_reason}</span>} />}
+        <Row k="Links waiting" v={q?.pending ?? "—"} />
+        <Row k="Links used today (UTC)" v={q ? `${q.usedToday} of ${q.daily_link_cap}` : "—"} />
+        <Row k="Last worker run" v={q?.last_worker_run ? new Date(q.last_worker_run).toLocaleString() : "Not yet"} />
+        {q?.queue_paused && q.isAdmin && (
+          <Button size="sm" disabled={busy} onClick={async () => { setBusy(true); try { await resume(); await load(); } finally { setBusy(false); } }}>Resume queue</Button>
+        )}
+      </div>
+    </section>
   );
 }

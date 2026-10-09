@@ -1,13 +1,11 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { Upload, Loader2, RotateCcw } from "lucide-react";
-import { scanFetch, scanAnalyze, createBatch } from "@/lib/scan.functions";
-import { supabase } from "@/integrations/supabase/client";
+import { enqueueBatch, processQueueNow, getBatchJobs, retryJob } from "@/lib/queue.functions";
 import { Button } from "@/components/ui/button";
 
-const CONCURRENCY = 2; // keep Google request rate low
 const MAX_URLS = 500;
 
 type RowStatus = "pending" | "processing" | "completed" | "partial" | "failed";
@@ -40,52 +38,58 @@ function parseInput(text: string): Checked {
 }
 
 export function BulkScan({ disabled }: { disabled: boolean }) {
-  const fetchStage = useServerFn(scanFetch);
-  const analyzeStage = useServerFn(scanAnalyze);
-  const newBatch = useServerFn(createBatch);
+  const enqueue = useServerFn(enqueueBatch);
+  const process = useServerFn(processQueueNow);
+  const loadJobs = useServerFn(getBatchJobs);
+  const retryFn = useServerFn(retryJob);
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState("");
   const [checked, setChecked] = useState<Checked | null>(null);
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<(Row & { jobId: string })[]>([]);
   const [batch, setBatch] = useState<{ id: string; batch_number: number } | null>(null);
-  const [running, setRunning] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [paused, setPaused] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const running = rows.some((r) => r.status === "pending" || r.status === "processing");
 
-  const patch = (i: number, p: Partial<Row>) => setRows((r) => r.map((x, j) => (j === i ? { ...x, ...p } : x)));
+  const refresh = useCallback(async (batchId: string) => {
+    const r = await loadJobs({ data: { batchId } });
+    setPaused(r.paused ? r.pauseReason ?? "Queue paused" : null);
+    setRows(r.jobs.map((j) => ({ jobId: j.id, url: j.url, status: j.status as RowStatus, scanId: j.scan_id ?? undefined, error: j.status === "pending" && j.error ? `Retrying: ${j.error}` : j.error ?? undefined,
+      business: j.scan?.business_name, rating: j.scan?.rating, reviews: j.scan?.reviews_retrieved, high: j.scan?.high_count, medium: j.scan?.medium_count })));
+  }, [loadJobs]);
 
-  async function runOne(i: number, url: string, batchId: string) {
-    patch(i, { status: "processing", error: undefined });
-    try {
-      const a = await fetchStage({ data: { url, batchId } });
-      if (!a.ok) { patch(i, { status: "failed", error: a.message, scanId: a.scanId }); return; }
-      patch(i, { scanId: a.scanId });
-      const b = await analyzeStage({ data: { scanId: a.scanId } });
-      const { data: s } = await supabase.from("scans").select("business_name, rating, reviews_retrieved, high_count, medium_count").eq("id", a.scanId).maybeSingle();
-      patch(i, { status: b.ok ? "completed" : "partial", error: b.ok ? undefined : b.message, business: s?.business_name, rating: s?.rating, reviews: s?.reviews_retrieved, high: s?.high_count, medium: s?.medium_count });
-    } catch { patch(i, { status: "failed", error: "Network error." }); }
-  }
+  // While the page is open: poll progress and nudge the worker. The scheduled worker continues if the page is closed.
+  useEffect(() => {
+    if (!batch || !running) return;
+    let alive = true;
+    const tick = async () => {
+      try { await process(); } catch { /* scheduled worker will continue */ }
+      if (alive) await refresh(batch.id);
+    };
+    const id = setInterval(() => { void refresh(batch.id); }, 4000);
+    void tick();
+    const kick = setInterval(() => { void tick(); }, 25000);
+    return () => { alive = false; clearInterval(id); clearInterval(kick); qc.invalidateQueries({ queryKey: ["scans"] }); };
+  }, [batch, running, process, refresh, qc]);
 
   async function start() {
     if (!checked?.valid.length) return;
-    setErr(null); setRunning(true);
+    setErr(null); setStarting(true);
     try {
-      const b = await newBatch({ data: { total: checked.valid.length } });
-      setBatch(b);
-      const list = checked.valid;
-      setRows(list.map((url) => ({ url, status: "pending" })));
-      let next = 0;
-      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, async () => {
-        while (next < list.length) { const i = next++; await runOne(i, list[i]!, b.id); }
-      }));
+      const r = await enqueue({ data: { urls: checked.valid } });
+      if (!r.ok) { setErr(r.message); return; }
+      setBatch(r.batch);
+      await refresh(r.batch.id);
     } catch (e) { setErr(e instanceof Error ? e.message : "Batch failed to start."); }
-    finally { setRunning(false); qc.invalidateQueries({ queryKey: ["scans"] }); }
+    finally { setStarting(false); }
   }
 
   async function retry(i: number) {
     if (!batch) return;
-    setRunning(true); await runOne(i, rows[i]!.url, batch.id); setRunning(false);
-    qc.invalidateQueries({ queryKey: ["scans"] });
+    await retryFn({ data: { jobId: rows[i]!.jobId } });
+    await refresh(batch.id);
   }
 
   async function onFile(f: File | undefined) {
@@ -105,8 +109,8 @@ export function BulkScan({ disabled }: { disabled: boolean }) {
         <input ref={fileRef} type="file" accept=".csv,text/csv,text/plain" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
         <Button type="button" variant="outline" size="sm" disabled={running} onClick={() => fileRef.current?.click()}><Upload /> Upload CSV</Button>
         <Button type="button" variant="outline" size="sm" disabled={running || !text.trim()} onClick={() => { setChecked(parseInput(text)); setRows([]); }}>Validate</Button>
-        <Button type="button" size="sm" disabled={disabled || running || !checked?.valid.length || tooMany} onClick={start}>
-          {running && <Loader2 className="animate-spin" />} Start batch ({checked?.valid.length ?? 0})
+        <Button type="button" size="sm" disabled={disabled || running || starting || !checked?.valid.length || tooMany} onClick={start}>
+          {(running || starting) && <Loader2 className="animate-spin" />} Start batch ({checked?.valid.length ?? 0})
         </Button>
       </div>
 
@@ -118,6 +122,7 @@ export function BulkScan({ disabled }: { disabled: boolean }) {
         </div>
       )}
       {tooMany && <p className="mt-2 text-sm text-risk-high">Maximum {MAX_URLS} URLs per batch.</p>}
+      {paused && <p role="alert" className="mt-2 text-sm text-risk-high">Queue paused: {paused} An admin can resume it in Settings.</p>}
       {err && <p role="alert" className="mt-2 text-sm text-risk-high">{err}</p>}
 
       {batch && rows.length > 0 && (
@@ -143,7 +148,7 @@ export function BulkScan({ disabled }: { disabled: boolean }) {
                   <td className="p-2">{r.medium ?? "—"}</td>
                   <td className="p-2"><span className="capitalize">{r.status}</span>{r.error && <div className="mt-1 max-w-[220px] text-muted-foreground">{r.error}</div>}</td>
                   <td className="space-x-2 whitespace-nowrap p-2">
-                    {r.scanId && <Link to="/history" className="text-primary underline">View</Link>}
+                    {r.scanId && <Link to="/reports/$id" params={{ id: r.scanId }} className="text-primary underline">View</Link>}
                     {(r.status === "failed" || r.status === "partial") && !running && <button type="button" onClick={() => retry(i)} className="inline-flex items-center gap-1 text-primary underline"><RotateCcw className="h-3 w-3" />Retry</button>}
                   </td>
                 </tr>))}</tbody>
